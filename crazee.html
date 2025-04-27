@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crazee</title>
+    <script defer src="crazee.js"></script>
+</head>
+<body>
+<h1>Welcome to Crazee!</h1>
+<button>Roll</button>
+<div id="dice">
+</div>
+<div id="reserve"></div>
+<div id="log"></div>
+<div id="scorecard">
+    <form id="scoreForm">
+        <input type="radio" name="option" value="1" id="ones">
+        <label for="ones">Ones</label><br>
+        <input type="radio" name="option" value="2" id="twos">
+        <label for="twos">Twos</label><br>
+        <input type="radio" name="option" value="3" id="threes">
+        <label for="threes">Threes</label><br>
+        <input type="radio" name="option" value="4" id="fours">
+        <label for="fours">Fours</label><br>
+        <input type="radio" name="option" value="5" id="fives">
+        <label for="fives">Fives</label><br>
+        <input type="radio" name="option" value="6" id="sixes">
+        <label for="sixes">Sixes</label><br>
+        <input type="radio" name="option" value="threeOfAKind" id="threeOfAKind">
+        <label for="threeOfAKind">Three of a Kind</label><br>
+        <input type="radio" name="option" value="fourOfAKind" id="fourOfAKind">
+        <label for="fourOfAKind">Four of a Kind</label><br>
+        <input type="radio" name="option" value="fullHouse" id="fullHouse">
+        <label for="fullHouse">Full House</label><br>
+        <input type="radio" name="option" value="smallStraight" id="smallStraight">
+        <label for="smallStraight">Small Straight</label><br>
+        <input type="radio" name="option" value="largeStraight" id="largeStraight">
+        <label for="largeStraight">Large Straight</label><br>
+        <input type="radio" name="option" value="crazee" id="crazee">
+        <label for="crazee">Crazee</label><br>
+        <input type="radio" name="option" value="chance" id="chance">
+        <label for="chance">Chance</label><br>
+        <input type="submit">
+    </form>
+    <h2>Score: <span id="score"></span></h2>
+</div>
+</body>
+</html>
