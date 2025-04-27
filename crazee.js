@@ -74,39 +74,51 @@ const PlayFeild = {
 
     //This is the BIG one
     updateScores() {
+        const diceValues = PlayFeild.dice.map((die) => die.value);
         //The approach now is to selectively enable components.
         //If a score type has already been used, disable it.
         //TODO - Update this feature once the score data is set up
 
         //If none of the dice rolls contain the desired number (ones-sixes), disable the option on the score card.
         for (let i = 1; i <= 6; i++) {
-            const hasNumber = PlayFeild.dice.some((die) => die.value === i);
+            const hasNumber = diceValues.some((die) => die === i);
             hasNumber && (scoreForm.querySelector(`input[value="${i}"]`).disabled = false);
             //In human terms, this checks if any value of the array matches i, and disables the coreesponding form input if there are no shared values.
         }
 
-        //If the same value repeats for 3 dice, enable 3 of a kind
-
-        const multipleKindCheck = PlayFeild.dice.reduce((acc, die) => {
-            const value = die.value;
-            acc.set(value, (acc.get(value) || 0) + 1);
-            return acc;
-        }, new Map());
-        // This part uses the reduce method to create a Map that counts the occurrences of each unique die value.
-        // The accumulator (acc) stores each die value as a key and its count as the value.
-        // acc.get(value) checks if we have already counted this value, and if not, Starts the count at 1.
-        // The final result is a new array with the original value as the key and the count as the value.
-
-        //Essentially, this is just the easiest way for me to check for Three and Four of a kinds.
-        const multipleArray = Array.from(multipleKindCheck.values());
-        //Calling these values into an array simply because its easier for my understanding.
-
-        //Now that we have an array, I can use some to 
-        if (multipleArray.some((count) => count >= 3)) {
-            scoreForm.querySelector("threeOfAKind").disabled = false;
+        const counts = new Array(6).fill(0); //array of 6 0s
+        for (let i = 0; i < 6; i++) {
+            for (let die of diceValues) {
+                die === i + 1 && counts[i]++;
+            }
         }
-        if (multipleArray.some((count) => count >= 4)) {
-            scoreForm.querySelector("fourOfAKind").disabled = false;
+        /*
+        This fills counts into an array where each value represents the count of the index number + 1 in dice.
+        ex. If there are 3 2s in dice, the index 1 in counts will have the value 3.
+        */
+
+        //These are the multiple of a kind checks
+        scoreForm.querySelector("#threeKind").disabled = !counts.some((value) => value >= 3); //Enabled if any count in counts is 3 or greater.
+        scoreForm.querySelector("#fourKind").disabled = !counts.some((value) => value >= 4);
+
+        scoreForm.querySelector("#fullHouse").disabled = !(counts.includes(3) && counts.includes(2)); //Enabled if The counts include both 3 and 2
+        //console.log(counts);
+
+        //Check for a small and large straight
+        const smalls = {
+            small1: [ 1, 2, 3, 4 ],
+            small2: [ 2, 3, 4, 5 ],
+            small3: [ 3, 4, 5, 6 ],
+        };
+        const larges = {
+            large1: [ 1, 2, 3, 4, 5 ],
+            large2: [ 2, 3, 4, 5, 6 ],
+        };
+        for (let small in smalls) {
+            scoreForm.querySelector("#small").disabled = !small.every((value) => diceValues.includes(value)); //Enabled if every value in one of the smalls is found in the die array.
+        }
+        for (let large in larges) {
+            scoreForm.querySelector("#large").disabled = !large.every((value) => diceValues.includes(value));
         }
     },
 };
@@ -130,4 +142,5 @@ function rollDice() {
     }
     PlayFeild.rollNum++; //We roled the dice, so increment this to track that.
     PlayFeild.updatePlayDice(); //Now the dice are rolled, update the rolled display.
+    PlayFeild.updateScores(); //Time to ensure the avalible scores match.
 }
