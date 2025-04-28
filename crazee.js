@@ -14,7 +14,6 @@ scoreForm.querySelectorAll("input").forEach((input) => {
     input.disabled = true;
 });
 scoreForm.addEventListener("change", updateSubmit);
-scoreForm.addEventListener("submit", PlayFeild.submitScore);
 
 //a Dice class for each of the 5 dice.
 //Used for simple tracking of reserved dice, rolling, and HTML generation
@@ -141,10 +140,12 @@ const PlayFeild = {
         //TODO: Implement this functionality once the tracking of game turns and storage is better implemented.
     },
 
-    submitScore() {
+    submitScore(e) {
+        e.preventDefault();
         const diceValues = PlayFeild.dice.map((die) => die.value);
 
-        const checkedInput = scoreForm.querySelector('input[checked="true"]');
+        const checkedInput = scoreForm.querySelector('input[type="radio"]:checked');
+        // console.log(checkedInput);
         const scoreType = checkedInput.value;
         let total = 0; // Initialize total outside the switch
         switch (scoreType) {
@@ -185,12 +186,18 @@ const PlayFeild = {
             case "crazee":
                 total = 50;
                 break;
-            //TODO: Maybe add Crazee bonuses as scores.
-            //TODO: Store Selecrted Score Type for future use
-            //TODO: Store score.
+            case "default":
+                console.error("Invalid score type sent");
         }
+        //TODO: Maybe add Crazee bonuses as scores.
+        //TODO: Store Selecrted Score Type for future use
+        //TODO: Store score.
+
+        console.log(total);
     },
 };
+
+scoreForm.addEventListener("submit", PlayFeild.submitScore); //Needs to be after playfeild to call object
 
 //Below are any functions not specific to one object and/or called by something other than an object.
 function makePageElement(element, text, destination) {
