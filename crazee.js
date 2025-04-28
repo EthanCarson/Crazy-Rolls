@@ -19,7 +19,8 @@ scoreForm.addEventListener("change", updateSubmit);
 //Used for simple tracking of reserved dice, rolling, and HTML generation
 class Dice {
     constructor() {
-        this.value = this.roll();
+        this.value = 0;
+        this.roll(); //Immediately get a roll
         this.isReserved = false;
     }
 
@@ -47,9 +48,14 @@ const PlayFeild = {
     }),
     playDice: [],
     reserve: [],
-    rollNum: 0, //Counter to store number of rolls in turn
-    turnNum: 1, //Counter to store turn number;
 
+    storedData: {
+        currentScore: 0,
+        turnNum: 1,
+        rollNum: 0,
+        dice: [],
+        usedScoreTypes: [],
+    },
     getPlayDice() {
         this.playDice = this.dice.filter((die) => !die.isReserved);
     },
@@ -137,7 +143,9 @@ const PlayFeild = {
         scoreForm.querySelector("#chance").disabled = false;
 
         //Finally, disable any score options previously used
-        //TODO: Implement this functionality once the tracking of game turns and storage is better implemented.
+        for (type in this.storedData.usedScoreTypes) {
+            scoreForm.querySelector(`input[value=${type}]`).disabled = true; //Disable the input with associated type.
+        }
     },
 
     submitScore(e) {
@@ -188,15 +196,44 @@ const PlayFeild = {
                 break;
             case "default":
                 console.error("Invalid score type sent");
+                return; //STOP RUNNING CODE IF THIS HAPPENS
         }
         //TODO: Maybe add Crazee bonuses as scores.
         //TODO: Store Selecrted Score Type for future use
         //TODO: Store score.
 
-        console.log(total);
+        PlayFeild.storedData.currentScore += total; //Add that score to the stored score.
+        PlayFeild.storedData.usedScoreTypes.push(scoreType); //Push the score we just used to storage.
+        PlayFeild.store(); //Locally store that data.
+    },
+    canUseLocalStorage() {
+        try {
+            const testKey = "_test";
+            localStorage.setItem(testKey, testKey);
+            localStorage.removeItem(testKey);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    },
+    //These 2 are pretty self explanatory. JSON strings and local storage.
+    store() {
+        this.canUseLocalStorage && //Check if local storage is applicable first.
+            (() => {
+                const dataString = JSON.stringify(this.storedData);
+                localStorage.setItem("storedData", dataString);
+            });
+    },
+    load() {
+        this.canUseLocalStorage &&
+            (() => {
+                const dataString = localStorage.getItem("storedData");
+                dataString && (this.storedData = JSON.parse(dataString)); //Use && to ensure storedData is replace only if local storage contained data.
+            });
     },
 };
 
+PlayFeild.load(); //Now that's done, load stored data in!
 scoreForm.addEventListener("submit", PlayFeild.submitScore); //Needs to be after playfeild to call object
 
 //Below are any functions not specific to one object and/or called by something other than an object.
@@ -207,7 +244,7 @@ function makePageElement(element, text, destination) {
     return pageElement;
 }
 function rollDice() {
-    if (PlayFeild.rollNum >= 3) {
+    if (PlayFeild.storedData.rollNum >= 3) {
         PlayFeild.messageLog("You already rolled 3 times this turn!");
         return;
     }
@@ -216,8 +253,10 @@ function rollDice() {
         //This is kinda akward, but the first time ONLY do I want to roll all dice.
         die.roll(); //Make a roll for each of the 5 die.
     }
-    PlayFeild.rollNum++; //We roled the dice, so increment this to track that.
+    PlayFeild.storedData.rollNum++; //We roled the dice, so increment this to track that.
     PlayFeild.updatePlayDice(); //Now the dice are rolled, update the rolled display.
+    PlayFeild.storedData.dice = PlayFeild.dice; //Store our dice for a page reload
+    PlayFeild.store(); //Now store that data.
     PlayFeild.updateScores(); //Time to ensure the avalible scores match.
 }
 function updateSubmit() {
