@@ -14,6 +14,7 @@ scoreForm.querySelectorAll("input").forEach((input) => {
     input.disabled = true;
 });
 scoreForm.addEventListener("change", updateSubmit);
+scoreForm.addEventListener("submit", PlayFeild.submitScore);
 
 //a Dice class for each of the 5 dice.
 //Used for simple tracking of reserved dice, rolling, and HTML generation
@@ -138,6 +139,56 @@ const PlayFeild = {
 
         //Finally, disable any score options previously used
         //TODO: Implement this functionality once the tracking of game turns and storage is better implemented.
+    },
+
+    submitScore() {
+        const diceValues = PlayFeild.dice.map((die) => die.value);
+
+        const checkedInput = scoreForm.querySelector('input[checked="true"]');
+        const scoreType = checkedInput.value;
+        let total = 0; // Initialize total outside the switch
+        switch (scoreType) {
+            case "1":
+            case "2":
+            case "3":
+            case "4":
+            case "5":
+            case "6":
+                const targetValue = +scoreType;
+                //For most of these sums, I am using array.reduce. In simple terms, this reduces the array down to a single number, in most cases being a way to sum up the values within an array, altough there are other applications.
+                total = diceValues.reduce(
+                    (sum, die) => {
+                        return die === targetValue ? sum + die : sum;
+                    },
+                    // initialValue = 0
+                    0
+                );
+                break;
+            //Funny huh? The reduce function accepts 2 parameters, with one being a function that itself accepts up to 4 parameters, being accumulator, value, index, array. Most of the time only 2 are needed.
+            case "threeKind":
+            case "fourKind":
+            case "chance":
+                total = diceValues.reduce((sum, die) => {
+                    return sum + die; //Add each die to the sum.
+                }, 0);
+                break;
+            //The remainder of the scores are all trivial.
+            case "fullHouse":
+                total = 25;
+                break;
+            case "small":
+                total = 30;
+                break;
+            case "large":
+                total = 40;
+                break;
+            case "crazee":
+                total = 50;
+                break;
+            //TODO: Maybe add Crazee bonuses as scores.
+            //TODO: Store Selecrted Score Type for future use
+            //TODO: Store score.
+        }
     },
 };
 
