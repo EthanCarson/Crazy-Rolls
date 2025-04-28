@@ -7,11 +7,14 @@ const diceDiv = document.querySelector("#dice");
 const reserveDiv = document.querySelector("#reserve");
 const scoreSpan = document.querySelector("#score");
 const logDiv = document.querySelector("#log");
+
 const scoreForm = document.querySelector("#scoreForm");
 // Disable ALL inputs by default
 scoreForm.querySelectorAll("input").forEach((input) => {
     input.disabled = true;
 });
+scoreForm.addEventListener("change", updateSubmit);
+
 //a Dice class for each of the 5 dice.
 //Used for simple tracking of reserved dice, rolling, and HTML generation
 class Dice {
@@ -75,51 +78,66 @@ const PlayFeild = {
     //This is the BIG one
     updateScores() {
         const diceValues = PlayFeild.dice.map((die) => die.value);
-        //The approach now is to selectively enable components.
-        //If a score type has already been used, disable it.
-        //TODO - Update this feature once the score data is set up
 
-        //If none of the dice rolls contain the desired number (ones-sixes), disable the option on the score card.
+        // Enable single number scores (ones through sixes)
         for (let i = 1; i <= 6; i++) {
             const hasNumber = diceValues.some((die) => die === i);
-            hasNumber && (scoreForm.querySelector(`input[value="${i}"]`).disabled = false);
-            //In human terms, this checks if any value of the array matches i, and disables the coreesponding form input if there are no shared values.
+            scoreForm.querySelector(`input[value="${i}"]`).disabled = !hasNumber;
         }
 
-        const counts = new Array(6).fill(0); //array of 6 0s
-        for (let i = 0; i < 6; i++) {
-            for (let die of diceValues) {
-                die === i + 1 && counts[i]++;
-            }
+        // Count occurrences of each die value
+        const counts = new Array(6).fill(0); // array of 6 0s
+        for (let die of diceValues) {
+            counts[die - 1]++; // Increment the count for this die value
         }
-        /*
-        This fills counts into an array where each value represents the count of the index number + 1 in dice.
-        ex. If there are 3 2s in dice, the index 1 in counts will have the value 3.
-        */
 
-        //These are the multiple of a kind checks
-        scoreForm.querySelector("#threeKind").disabled = !counts.some((value) => value >= 3); //Enabled if any count in counts is 3 or greater.
+        // Multiple of a kind checks
+        scoreForm.querySelector("#threeKind").disabled = !counts.some((value) => value >= 3);
         scoreForm.querySelector("#fourKind").disabled = !counts.some((value) => value >= 4);
 
-        scoreForm.querySelector("#fullHouse").disabled = !(counts.includes(3) && counts.includes(2)); //Enabled if The counts include both 3 and 2
-        //console.log(counts);
+        // Full house check
+        scoreForm.querySelector("#fullHouse").disabled = !(counts.includes(3) && counts.includes(2));
 
-        //Check for a small and large straight
-        const smalls = {
-            small1: [ 1, 2, 3, 4 ],
-            small2: [ 2, 3, 4, 5 ],
-            small3: [ 3, 4, 5, 6 ],
-        };
-        const larges = {
-            large1: [ 1, 2, 3, 4, 5 ],
-            large2: [ 2, 3, 4, 5, 6 ],
-        };
-        for (let small in smalls) {
-            scoreForm.querySelector("#small").disabled = !small.every((value) => diceValues.includes(value)); //Enabled if every value in one of the smalls is found in the die array.
+        // Check for straights
+        const smalls = [
+            [ 1, 2, 3, 4 ],
+            [ 2, 3, 4, 5 ],
+            [ 3, 4, 5, 6 ],
+        ];
+
+        const larges = [
+            [ 1, 2, 3, 4, 5 ],
+            [ 2, 3, 4, 5, 6 ],
+        ];
+
+        // Check if any small straight pattern exists in the dice
+        for (let smallArray of smalls) {
+            /*
+             I could maybe simplify this farther, but I struggled a bit with this part,
+             so I am fine leaving it as is.
+             */
+            if (smallArray.every((value) => diceValues.includes(value))) {
+                scoreForm.querySelector("#small").disabled = false;
+                break; //We found a straight, stop iterating.
+            }
         }
-        for (let large in larges) {
-            scoreForm.querySelector("#large").disabled = !large.every((value) => diceValues.includes(value));
+
+        // Check if any large straight pattern exists in the dice
+        for (let largeArray of larges) {
+            if (largeArray.every((value) => diceValues.includes(value))) {
+                scoreForm.querySelector("#large").disabled = false;
+                break;
+            }
         }
+
+        //If all 5 values match, enable the Crazee!
+        scoreForm.querySelector("#crazee").disabled = !diceValues.every((value) => value === diceValues[0]); //Enabled if every value matches the first.
+
+        //Always enable the chance
+        scoreForm.querySelector("#chance").disabled = false;
+
+        //Finally, disable any score options previously used
+        //TODO: Implement this functionality once the tracking of game turns and storage is better implemented.
     },
 };
 
@@ -143,4 +161,9 @@ function rollDice() {
     PlayFeild.rollNum++; //We roled the dice, so increment this to track that.
     PlayFeild.updatePlayDice(); //Now the dice are rolled, update the rolled display.
     PlayFeild.updateScores(); //Time to ensure the avalible scores match.
+}
+function updateSubmit() {
+    //Enable submit as long as one input is checked.
+    const radios = scoreForm.querySelectorAll('input[type="radio"]');
+    scoreForm.querySelector(`input[type="submit"]`).disabled = !Array.from(radios).some((radio) => radio.checked);
 }
