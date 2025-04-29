@@ -17,196 +17,77 @@ scoreForm.addEventListener("change", updateSubmit);
 
 //a Dice class for each of the 5 dice.
 //Used for simple tracking of reserved dice, rolling, and HTML generation
-class Dice {
-    constructor() {
+
+//Core objects for the game.
+
+//1. The die. Keeps data for everything you need to know about a die and how to use it.
+class Die {
+    constructor(id) {
+        this.id = id;
         this.value = 0;
-        this.roll(); //Immediately get a roll
         this.isReserved = false;
+        this.roll(); //Update die's value immediately
     }
 
     roll() {
         this.value = Math.floor(Math.random() * 6 + 1);
     }
-    changeReserve() {
-        this.isReserved = !this.isReserved; //Reverse the state
-        PlayFeild.updatePlayDice();
-        PlayFeild.updateReserve();
-    }
-    generateHTML(destination) {
-        const dieP = makePageElement("p", this.value, destination);
-        dieP.addEventListener("click", () => {
-            this.changeReserve();
-        }); //Arrow syntax is needed here to call this function with the proper this.
+
+    toggleReserved() {
+        this.isReserved = !this.isReserved;
+        //Come back here later to update UI
     }
 }
 
-//This PlayFeild object contains all vital properties of the play feild, including the dice at play, sortment for reserved dice, adding an element to the feild, alerting the user, and so on
-const PlayFeild = {
-    //Fastest way I found to do this, creates an array of length 5 where each value is created with the Dice class.
-    dice: Array.from({length: 5}, () => {
-        return new Dice();
-    }),
-    playDice: [],
-    reserve: [],
+//2. Game state Manager. This handles all internal logic needed for the game to run.
 
-    storedData: {
-        currentScore: 0,
-        turnNum: 1,
-        rollNum: 0,
-        dice: [],
-        usedScoreTypes: [],
-    },
-    getPlayDice() {
-        this.playDice = this.dice.filter((die) => !die.isReserved);
-    },
-    getReserve() {
-        this.reserve = this.dice.filter((die) => die.isReserved);
-    },
-    messageLog(message) {
-        logDiv.innerHTML = "";
-        makePageElement("p", message, logDiv);
-    },
-    updatePlayDice() {
-        this.getPlayDice();
-        diceDiv.innerHTML = "";
-        for (let die of this.playDice) {
-            die.generateHTML(diceDiv);
-        }
-    },
-    updateReserve() {
-        this.getReserve();
-        reserveDiv.innerHTML = "";
-        for (let die of this.reserve) {
-            die.generateHTML(reserveDiv);
-        }
-    },
+class GameState {
+    constructor() {
+        this.dice = Array.from({length: 5}, (_, i) => new Die(i)); //Pull just the index from it, not the value.
+        this.currentScore = 0;
+        this.turnNum = 1;
+        this.rollNum = 0;
+        this.usedScoreTypes = [];
+    }
 
-    //This is the BIG one
-    updateScores() {
-        const diceValues = PlayFeild.dice.map((die) => die.value);
+    getActiveDice() {
+        return this.dice.filter((die) => !die.isReserved);
+    }
 
-        // Enable single number scores (ones through sixes)
-        for (let i = 1; i <= 6; i++) {
-            const hasNumber = diceValues.some((die) => die === i);
-            scoreForm.querySelector(`input[value="${i}"]`).disabled = !hasNumber;
+    getReservedDice() {
+        return this.dice.filter((die) => die.isReserved);
+    }
+
+    rollDice() {
+        if (this.rollNum >= 3) {
+            return false;
         }
 
-        // Count occurrences of each die value
-        const counts = new Array(6).fill(0); // array of 6 0s
-        for (let die of diceValues) {
-            counts[die - 1]++; // Increment the count for this die value
+        for (let die of this.rollNum === 0 ? this.dice : this.getActiveDice()) {
+            //This is kinda akward, but the first time ONLY do I want to roll all dice.
+            die.roll(); //Make a roll for each of the 5 die.
         }
+        this.rollNum++; //We roled the dice, so increment this to track that.
+        return true;
+    }
 
-        // Multiple of a kind checks
-        scoreForm.querySelector("#threeKind").disabled = !counts.some((value) => value >= 3);
-        scoreForm.querySelector("#fourKind").disabled = !counts.some((value) => value >= 4);
+    calculateScoreForType(scoreType) {
+        const diceValues = this.dice.map((die) => die.value);
+        //Logic
+    }
 
-        // Full house check
-        scoreForm.querySelector("#fullHouse").disabled = !(counts.includes(3) && counts.includes(2));
+    submitScore(scoreType) {
+        //Logic
+    }
 
-        // Check for straights
-        const smalls = [
-            [ 1, 2, 3, 4 ],
-            [ 2, 3, 4, 5 ],
-            [ 3, 4, 5, 6 ],
-        ];
+    getAvalibleScoretTypes() {
+        //More logic
+    }
+}
 
-        const larges = [
-            [ 1, 2, 3, 4, 5 ],
-            [ 2, 3, 4, 5, 6 ],
-        ];
-
-        // Check if any small straight pattern exists in the dice
-        for (let smallArray of smalls) {
-            /*
-             I could maybe simplify this farther, but I struggled a bit with this part,
-             so I am fine leaving it as is.
-             */
-            if (smallArray.every((value) => diceValues.includes(value))) {
-                scoreForm.querySelector("#small").disabled = false;
-                break; //We found a straight, stop iterating.
-            }
-        }
-
-        // Check if any large straight pattern exists in the dice
-        for (let largeArray of larges) {
-            if (largeArray.every((value) => diceValues.includes(value))) {
-                scoreForm.querySelector("#large").disabled = false;
-                break;
-            }
-        }
-
-        //If all 5 values match, enable the Crazee!
-        scoreForm.querySelector("#crazee").disabled = !diceValues.every((value) => value === diceValues[0]); //Enabled if every value matches the first.
-
-        //Always enable the chance
-        scoreForm.querySelector("#chance").disabled = false;
-
-        //Finally, disable any score options previously used
-        for (type in this.storedData.usedScoreTypes) {
-            scoreForm.querySelector(`input[value=${type}]`).disabled = true; //Disable the input with associated type.
-        }
-    },
-
-    submitScore(e) {
-        e.preventDefault();
-        const diceValues = PlayFeild.dice.map((die) => die.value);
-
-        const checkedInput = scoreForm.querySelector('input[type="radio"]:checked');
-        // console.log(checkedInput);
-        const scoreType = checkedInput.value;
-        let total = 0; // Initialize total outside the switch
-        switch (scoreType) {
-            case "1":
-            case "2":
-            case "3":
-            case "4":
-            case "5":
-            case "6":
-                const targetValue = +scoreType;
-                //For most of these sums, I am using array.reduce. In simple terms, this reduces the array down to a single number, in most cases being a way to sum up the values within an array, altough there are other applications.
-                total = diceValues.reduce(
-                    (sum, die) => {
-                        return die === targetValue ? sum + die : sum;
-                    },
-                    // initialValue = 0
-                    0
-                );
-                break;
-            //Funny huh? The reduce function accepts 2 parameters, with one being a function that itself accepts up to 4 parameters, being accumulator, value, index, array. Most of the time only 2 are needed.
-            case "threeKind":
-            case "fourKind":
-            case "chance":
-                total = diceValues.reduce((sum, die) => {
-                    return sum + die; //Add each die to the sum.
-                }, 0);
-                break;
-            //The remainder of the scores are all trivial.
-            case "fullHouse":
-                total = 25;
-                break;
-            case "small":
-                total = 30;
-                break;
-            case "large":
-                total = 40;
-                break;
-            case "crazee":
-                total = 50;
-                break;
-            case "default":
-                console.error("Invalid score type sent");
-                return; //STOP RUNNING CODE IF THIS HAPPENS
-        }
-        //TODO: Maybe add Crazee bonuses as scores.
-        //TODO: Store Selecrted Score Type for future use
-        //TODO: Store score.
-
-        PlayFeild.storedData.currentScore += total; //Add that score to the stored score.
-        PlayFeild.storedData.usedScoreTypes.push(scoreType); //Push the score we just used to storage.
-        PlayFeild.store(); //Locally store that data.
-    },
-    canUseLocalStorage() {
+//3. Storage Handler: Stores and loads data to and from local storage.
+class StorageHandler {
+    static isAvailable() {
         try {
             const testKey = "_test";
             localStorage.setItem(testKey, testKey);
@@ -215,52 +96,140 @@ const PlayFeild = {
         } catch (error) {
             return false;
         }
-    },
-    //These 2 are pretty self explanatory. JSON strings and local storage.
-    store() {
-        this.canUseLocalStorage && //Check if local storage is applicable first.
-            (() => {
-                const dataString = JSON.stringify(this.storedData);
-                localStorage.setItem("storedData", dataString);
-            });
-    },
-    load() {
-        this.canUseLocalStorage &&
-            (() => {
-                const dataString = localStorage.getItem("storedData");
-                dataString && (this.storedData = JSON.parse(dataString)); //Use && to ensure storedData is replace only if local storage contained data.
-            });
-    },
-};
-
-PlayFeild.load(); //Now that's done, load stored data in!
-scoreForm.addEventListener("submit", PlayFeild.submitScore); //Needs to be after playfeild to call object
-
-//Below are any functions not specific to one object and/or called by something other than an object.
-function makePageElement(element, text, destination) {
-    const pageElement = document.createElement(`${element}`);
-    pageElement.textContent = text;
-    destination.append(pageElement); //append the destination an element with text content
-    return pageElement;
-}
-function rollDice() {
-    if (PlayFeild.storedData.rollNum >= 3) {
-        PlayFeild.messageLog("You already rolled 3 times this turn!");
-        return;
     }
 
-    for (let die of PlayFeild.rollNum === 0 ? PlayFeild.dice : PlayFeild.playDice) {
-        //This is kinda akward, but the first time ONLY do I want to roll all dice.
-        die.roll(); //Make a roll for each of the 5 die.
+    static saveGame(gameSate) {
+        if (!this.isAvailable()) return false;
+
+        const saveData = {
+            dice: GameState.dice.map((die) => ({
+                value: die.value,
+                isReserved: die.isReserved,
+            })),
+            currentScore: gameSate.currentScore,
+            turnNum: GameState.turnNum,
+            rollNum: GameState.rollNum,
+            usedScoreTypes: GameState.usedScoreTypes,
+        };
+
+        localStorage.setItem("saveData", JSON.stringify(saveData));
+        return true;
     }
-    PlayFeild.storedData.rollNum++; //We roled the dice, so increment this to track that.
-    PlayFeild.updatePlayDice(); //Now the dice are rolled, update the rolled display.
-    PlayFeild.storedData.dice = PlayFeild.dice; //Store our dice for a page reload
-    PlayFeild.store(); //Now store that data.
-    PlayFeild.updateScores(); //Time to ensure the avalible scores match.
+
+    static loadGame(gameState) {
+        if (!this.isAvailable()) return false;
+
+        const saveData = localStorage.getItem("yahtzeeSave");
+        if (!saveData) return false;
+
+        const data = JSON.parse(saveData);
+
+        // Restore basic properties
+        gameState.currentScore = data.currentScore;
+        gameState.turnNum = data.turnNum;
+        gameState.rollNum = data.rollNum;
+        gameState.usedScoreTypes = data.usedScoreTypes;
+
+        // Restore dice state
+        if (data.dice && data.dice.length === gameState.dice.length) {
+            data.dice.forEach((dieData, index) => {
+                gameState.dice[index].value = dieData.value;
+                gameState.dice[index].isReserved = dieData.isReserved;
+            });
+        }
+
+        return true;
+    }
 }
-function updateSubmit() {
-    //Enable submit as long as one input is checked.
-    const radios = scoreForm.querySelectorAll('input[type="radio"]');
-    scoreForm.querySelector(`input[type="submit"]`).disabled = !Array.from(radios).some((radio) => radio.checked);
+
+//4. UIControl. This object holds and updates all DOM elements.
+class UIControl {
+    constructor(gameState) {
+        this.gameState = gameState;
+
+        //Store DOM elements
+        this.diceDiv = document.querySelector("#dice");
+        this.reserveDiv = document.querySelector("#reserve");
+        this.scoreSpan = document.querySelector("#score");
+        this.logDiv = document.querySelector("#log");
+        this.scoreForm = document.querySelector("#scoreForm");
+        this.rollButton = document.querySelector("button");
+
+        //Initialize
+        this.setupEventListeners();
+        this.updateUI();
+    }
+    setupEventListeners() {
+        // Roll button
+        this.rollButton.addEventListener("click", () => this.handleRollClick());
+
+        // Score form
+        this.scoreForm.addEventListener("change", () => this.updateSubmitButton());
+        this.scoreForm.addEventListener("submit", (e) => this.handleScoreSubmit(e));
+    }
+
+    handleRollClick() {
+        //Logic to check if roll was true and then assigning message
+    }
+
+    handleScoreSubmit(e) {
+        //Logic
+        //May move this
+    }
+
+    createDieElement(die) {
+        //create a die L
+    }
+
+    updateUI() {
+        this.updateDiceDisplay();
+        this.updateScoreOptions();
+        this.updateScoreDisplay();
+    }
+
+    updateDiceDisplay() {
+        // Update active dice
+        this.diceDiv.innerHTML = "";
+        this.gameState.getActiveDice().forEach((die) => {
+            this.diceDiv.appendChild(this.createDieElement(die));
+        });
+
+        // Update reserved dice
+        this.reserveDiv.innerHTML = "";
+        this.gameState.getReservedDice().forEach((die) => {
+            this.reserveDiv.appendChild(this.createDieElement(die));
+        });
+    }
+
+    updateScoreDisplay() {
+        this.scoreSpan.textContent = this.gameState.currentScore;
+    }
+
+    updateSubmitButton() {
+        const submitButton = this.scoreForm.querySelector('input[type="submit"]');
+        //Logic to enable or disable button
+    }
+
+    showMessage(message) {
+        this.logDiv.innerHTML = "";
+        const p = document.createElement("p");
+        p.textContent = message;
+        this.logDiv.appendChild(p);
+    }
 }
+
+//5.CrazeeGame. This object is our motherboard. It traces all these elements together and runs them appropiately.
+
+class CrazeeGame {
+    constructor() {
+        this.gameSate = new GameState();
+        this.ui = new GamepadHapticActuator(this.gameSate);
+
+        //Load Saved game
+        StorageHandler.loadGame(this.gameSate);
+        this.ui.updateUI();
+    }
+}
+
+//Initialiaze
+const game = new CrazeeGame();
