@@ -39,7 +39,28 @@ class Die {
     }
 }
 
-//2. Game state Manager. This handles all internal logic needed for the game to run.
+//2. Score. This handles all logic specific to the score data.
+
+class Score {
+    constructor() {
+        this.currentScore = 0;
+        this.usedScoreTypes = [];
+        this.scoreValues = {};
+    }
+
+    calculateForType(scoreType, diceValues) {
+        //Logic
+    }
+
+    submitScore(scoreType, diceValues) {
+        //More Logic
+    }
+
+    getAvalibleScoreTypes() {
+        //Even more logic
+    }
+}
+//3. Game state Manager. This handles all internal logic needed for the game to run.
 
 class GameState {
     constructor() {
@@ -85,7 +106,7 @@ class GameState {
     }
 }
 
-//3. Storage Handler: Stores and loads data to and from local storage.
+//4. Storage Handler: Stores and loads data to and from local storage.
 class StorageHandler {
     static isAvailable() {
         try {
@@ -142,7 +163,7 @@ class StorageHandler {
     }
 }
 
-//4. UIControl. This object holds and updates all DOM elements.
+//5. UIControl. This object holds and updates all DOM elements.
 class UIControl {
     constructor(gameState) {
         this.gameState = gameState;
@@ -218,7 +239,7 @@ class UIControl {
     }
 }
 
-//5.CrazeeGame. This object is our motherboard. It traces all these elements together and runs them appropiately.
+//6.CrazeeGame. This object is our motherboard. It traces all these elements together and runs them appropiately.
 
 class CrazeeGame {
     constructor() {
