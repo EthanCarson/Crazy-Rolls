@@ -1,22 +1,4 @@
 "use strict";
-//Page elements
-document.querySelector("button").addEventListener("click", rollDice);
-//document.querySelector("form").onsubmit = submitForm;
-
-const diceDiv = document.querySelector("#dice");
-const reserveDiv = document.querySelector("#reserve");
-const scoreSpan = document.querySelector("#score");
-const logDiv = document.querySelector("#log");
-
-const scoreForm = document.querySelector("#scoreForm");
-// Disable ALL inputs by default
-scoreForm.querySelectorAll("input").forEach((input) => {
-    input.disabled = true;
-});
-scoreForm.addEventListener("change", updateSubmit);
-
-//a Dice class for each of the 5 dice.
-//Used for simple tracking of reserved dice, rolling, and HTML generation
 
 //Core objects for the game.
 
@@ -49,7 +31,53 @@ class Score {
     }
 
     calculateForType(scoreType, diceValues) {
-        //Logic
+        let total = 0; // Initialize total outside the switch
+        switch (scoreType) {
+            case "1":
+            case "2":
+            case "3":
+            case "4":
+            case "5":
+            case "6":
+                const targetValue = +scoreType;
+                //For most of these sums, I am using array.reduce. In simple terms, this reduces the array down to a single number, in most cases being a way to sum up the values within an array, altough there are other applications.
+                total = diceValues.reduce(
+                    (sum, die) => {
+                        return die === targetValue ? sum + die : sum;
+                    },
+                    // initialValue = 0
+                    0
+                );
+                break;
+            //Funny huh? The reduce function accepts 2 parameters, with one being a function that itself accepts up to 4 parameters, being accumulator, value, index, array. Most of the time only 2 are needed.
+            case "threeKind":
+            case "fourKind":
+            case "chance":
+                total = diceValues.reduce((sum, die) => {
+                    return sum + die; //Add each die to the sum.
+                }, 0);
+                break;
+            //The remainder of the scores are all trivial.
+            case "fullHouse":
+                total = 25;
+                break;
+            case "small":
+                total = 30;
+                break;
+            case "large":
+                total = 40;
+                break;
+            case "crazee":
+                total = 50;
+                break;
+            case "default":
+                console.error("Invalid score type sent");
+                return; //STOP RUNNING CODE IF THIS HAPPENS
+        }
+        //TODO: Maybe add Crazee bonuses as scores.
+        //TODO: Store Selecrted Score Type for future use
+        //TODO: Store score.
+        return total;
     }
 
     submitScore(scoreType, diceValues) {
@@ -91,42 +119,28 @@ class GameState {
         this.rollNum++; //We roled the dice, so increment this to track that.
         return true;
     }
-
-    calculateScoreForType(scoreType) {
-        const diceValues = this.dice.map((die) => die.value);
-        //Logic
-    }
-
-    submitScore(scoreType) {
-        //Logic
-    }
-
-    getAvalibleScoretTypes() {
-        //More logic
-    }
 }
 
 //4. Storage Handler: Stores and loads data to and from local storage.
-class StorageHandler {
-    static isAvailable() {
+//Actually making this an object literal seeing as we only need the object itself and not a specific instance per game or anything like that.
+const StorageHandler = {
+    isAvailable() {
         try {
             const testKey = "_test";
             localStorage.setItem(testKey, testKey);
             localStorage.removeItem(testKey);
             return true;
         } catch (error) {
+            console.warn("Local storage is not available.");
             return false;
         }
-    }
+    },
 
-    static saveGame(gameSate) {
+    saveGame(gameSate) {
         if (!this.isAvailable()) return false;
 
         const saveData = {
-            dice: GameState.dice.map((die) => ({
-                value: die.value,
-                isReserved: die.isReserved,
-            })),
+            dice: GameState.dice,
             currentScore: gameSate.currentScore,
             turnNum: GameState.turnNum,
             rollNum: GameState.rollNum,
@@ -135,12 +149,12 @@ class StorageHandler {
 
         localStorage.setItem("saveData", JSON.stringify(saveData));
         return true;
-    }
+    },
 
-    static loadGame(gameState) {
+    loadGame(gameState) {
         if (!this.isAvailable()) return false;
 
-        const saveData = localStorage.getItem("yahtzeeSave");
+        const saveData = localStorage.getItem("saveData");
         if (!saveData) return false;
 
         const data = JSON.parse(saveData);
@@ -150,18 +164,11 @@ class StorageHandler {
         gameState.turnNum = data.turnNum;
         gameState.rollNum = data.rollNum;
         gameState.usedScoreTypes = data.usedScoreTypes;
-
-        // Restore dice state
-        if (data.dice && data.dice.length === gameState.dice.length) {
-            data.dice.forEach((dieData, index) => {
-                gameState.dice[index].value = dieData.value;
-                gameState.dice[index].isReserved = dieData.isReserved;
-            });
-        }
+        gameState.dice = data.dice;
 
         return true;
-    }
-}
+    },
+};
 
 //5. UIControl. This object holds and updates all DOM elements.
 class UIControl {
@@ -176,17 +183,13 @@ class UIControl {
         this.scoreForm = document.querySelector("#scoreForm");
         this.rollButton = document.querySelector("button");
 
-        //Initialize
-        this.setupEventListeners();
-        this.updateUI();
-    }
-    setupEventListeners() {
-        // Roll button
+        //Initialize Event Listeners
         this.rollButton.addEventListener("click", () => this.handleRollClick());
-
-        // Score form
         this.scoreForm.addEventListener("change", () => this.updateSubmitButton());
         this.scoreForm.addEventListener("submit", (e) => this.handleScoreSubmit(e));
+
+        //Update UI on start
+        this.updateUI();
     }
 
     handleRollClick() {
@@ -194,8 +197,8 @@ class UIControl {
     }
 
     handleScoreSubmit(e) {
-        //Logic
-        //May move this
+        e.preventDefault();
+        //More later LLL
     }
 
     createDieElement(die) {
@@ -227,7 +230,7 @@ class UIControl {
     }
 
     updateSubmitButton() {
-        const submitButton = this.scoreForm.querySelector('input[type="submit"]');
+        this.scoreForm.querySelector('input[type="submit"]');
         //Logic to enable or disable button
     }
 
@@ -243,11 +246,11 @@ class UIControl {
 
 class CrazeeGame {
     constructor() {
-        this.gameSate = new GameState();
-        this.ui = new GamepadHapticActuator(this.gameSate);
+        this.gameState = new GameState();
+        this.ui = new GamepadHapticActuator(this.gameStte);
 
         //Load Saved game
-        StorageHandler.loadGame(this.gameSate);
+        StorageHandler.loadGame(this.gameState);
         this.ui.updateUI();
     }
 }
