@@ -81,22 +81,24 @@ class Score {
     }
 
     submitScore(scoreType, diceValues) {
-        //More Logic
+        const score = this.calculateForType(scoreType, diceValues);
+        this.currentScore += score;
+        this.usedScoreTypes.push(scoreType);
+        return score;
     }
 
-    getAvalibleScoreTypes() {
-        //Even more logic
-    }
+    // getAvalibleScoreTypes() {
+    //     //Even more logic
+    // }
 }
 //3. Game state Manager. This handles all internal logic needed for the game to run.
 
 class GameState {
     constructor() {
         this.dice = Array.from({length: 5}, (_, i) => new Die(i)); //Pull just the index from it, not the value.
-        this.currentScore = 0;
+        this.score = new Score();
         this.turnNum = 1;
         this.rollNum = 0;
-        this.usedScoreTypes = [];
     }
 
     getActiveDice() {
@@ -193,12 +195,16 @@ class UIControl {
     }
 
     handleRollClick() {
-        //Logic to check if roll was true and then assigning message
+        const didRoll = this.gameState.rollDice();
+        if (didRoll) {
+            this.updateUI();
+        } else {
+            this.showMessage("You can not roll any more this turn!");
+        }
     }
-
     handleScoreSubmit(e) {
         e.preventDefault();
-        //More later LLL
+        const didScore = this.gameState.score.submitScore(this.scoreForm.querySelector(`input[checked="true"]`).value), this.gameState);
     }
 
     createDieElement(die) {
