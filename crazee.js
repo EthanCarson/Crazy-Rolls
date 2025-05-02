@@ -17,7 +17,6 @@ class Die {
 
     toggleReserved() {
         this.isReserved = !this.isReserved;
-        //Come back here later to update UI
     }
 }
 
@@ -75,8 +74,6 @@ class Score {
                 return; //STOP RUNNING CODE IF THIS HAPPENS
         }
         //TODO: Maybe add Crazee bonuses as scores.
-        //TODO: Store Selecrted Score Type for future use
-        //TODO: Store score.
         return total;
     }
 
@@ -119,6 +116,7 @@ class GameState {
             die.roll(); //Make a roll for each of the 5 die.
         }
         this.rollNum++; //We roled the dice, so increment this to track that.
+        StorageHandler.saveGame(this);
         return true;
     }
 }
@@ -138,15 +136,15 @@ const StorageHandler = {
         }
     },
 
-    saveGame(gameSate) {
+    saveGame(gameState) {
         if (!this.isAvailable()) return false;
 
         const saveData = {
-            dice: GameState.dice,
-            currentScore: gameSate.currentScore,
-            turnNum: GameState.turnNum,
-            rollNum: GameState.rollNum,
-            usedScoreTypes: GameState.usedScoreTypes,
+            dice: gameState.dice,
+            currentScore: gameState.score.currentScore,
+            turnNum: gameState.turnNum,
+            rollNum: gameState.rollNum,
+            usedScoreTypes: gameState.score.usedScoreTypes,
         };
 
         localStorage.setItem("saveData", JSON.stringify(saveData));
@@ -162,11 +160,17 @@ const StorageHandler = {
         const data = JSON.parse(saveData);
 
         // Restore basic properties
-        gameState.currentScore = data.currentScore;
+        gameState.score.currentScore = data.currentScore;
         gameState.turnNum = data.turnNum;
         gameState.rollNum = data.rollNum;
-        gameState.usedScoreTypes = data.usedScoreTypes;
-        gameState.dice = data.dice;
+        gameState.score.usedScoreTypes = data.usedScoreTypes;
+
+        // Restore dice
+        if (data.dice && data.dice.length === gameState.dice.length) {
+            gameState.dice.forEach((die, index) => {
+                Object.assign(die, data.dice[index]); // Copy properties from loaded data to existing Die instance
+            });
+        }
 
         return true;
     },
@@ -178,18 +182,20 @@ class UIControl {
         this.gameState = gameState;
 
         //Store DOM elements
-        this.diceDiv = document.querySelector("#dice");
-        this.reserveDiv = document.querySelector("#reserve");
-        this.scoreSpan = document.querySelector("#score");
-        this.logDiv = document.querySelector("#log");
-        this.scoreForm = document.querySelector("#scoreForm");
-        this.rollButton = document.querySelector("button");
+        this.diceDiv = $("#dice");
+        this.reserveDiv = $("#reserve");
+        this.scoreSpan = $("#score");
+        this.logDiv = $("#log");
+        this.scoreForm = $("#scoreForm");
+        this.rollButton = $("button");
 
         //Initialize Event Listeners
-        this.rollButton.addEventListener("click", () => this.handleRollClick());
-        this.scoreForm.addEventListener("change", () => this.updateSubmitButton());
-        this.scoreForm.addEventListener("submit", (e) => this.handleScoreSubmit(e));
+        $(this.rollButton).click(() => this.handleRollClick());
+        $(this.scoreForm).change(() => this.updateSubmitButton());
+        $(this.scoreForm).submit((e) => this.handleScoreSubmit(e));
 
+        //Initialize Score UI
+        this.scoreSpan.find("input").prop("disabled", true);
         //Update UI on start
         this.updateUI();
     }
@@ -204,11 +210,26 @@ class UIControl {
     }
     handleScoreSubmit(e) {
         e.preventDefault();
-        const didScore = this.gameState.score.submitScore(this.scoreForm.querySelector(`input[checked="true"]`).value), this.gameState);
+        const didScore = this.gameState.score.submitScore(
+            this.scoreForm.find(`input:checked`).val(),
+            this.gameState.dice.map((die) => die.value),
+            this.gameState
+        );
+        if (didScore) {
+            this.updateUI();
+            StorageHandler.saveGame(this.gameState);
+        } else {
+            console.error("A problem occured in recording the score");
+        }
     }
 
     createDieElement(die) {
-        //create a die L
+        const dieElement = $(`<div data-die-id="${die.id}">${die.value}</div>`);
+        dieElement.click(() => {
+            die.toggleReserved();
+            this.updateUI();
+        });
+        return dieElement;
     }
 
     updateUI() {
@@ -219,32 +240,30 @@ class UIControl {
 
     updateDiceDisplay() {
         // Update active dice
-        this.diceDiv.innerHTML = "";
+        $(this.diceDiv).html("");
         this.gameState.getActiveDice().forEach((die) => {
-            this.diceDiv.appendChild(this.createDieElement(die));
+            this.diceDiv.append(this.createDieElement(die));
         });
 
         // Update reserved dice
-        this.reserveDiv.innerHTML = "";
+        $(this.reserveDiv).html("");
         this.gameState.getReservedDice().forEach((die) => {
-            this.reserveDiv.appendChild(this.createDieElement(die));
+            this.reserveDiv.append(this.createDieElement(die));
         });
     }
 
     updateScoreDisplay() {
-        this.scoreSpan.textContent = this.gameState.currentScore;
+        this.scoreSpan.text(this.gameState.score.currentScore);
     }
 
     updateSubmitButton() {
-        this.scoreForm.querySelector('input[type="submit"]');
-        //Logic to enable or disable button
+        const submitButton = this.scoreForm.find('input[type="submit"]');
+        this.scoreForm.find("input:checked") && submitButton.prop("disabled", false);
     }
 
     showMessage(message) {
-        this.logDiv.innerHTML = "";
-        const p = document.createElement("p");
-        p.textContent = message;
-        this.logDiv.appendChild(p);
+        this.logDiv.html("");
+        this.logDiv.append(`<p>${message}</p>}`);
     }
 }
 
@@ -253,7 +272,7 @@ class UIControl {
 class CrazeeGame {
     constructor() {
         this.gameState = new GameState();
-        this.ui = new GamepadHapticActuator(this.gameStte);
+        this.ui = new UIControl(this.gameState);
 
         //Load Saved game
         StorageHandler.loadGame(this.gameState);
