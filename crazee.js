@@ -6,9 +6,8 @@
 class Die {
     constructor(id) {
         this.id = id;
-        this.value = 0;
+        this.value = "";
         this.isReserved = false;
-        this.roll(); //Update die's value immediately
     }
 
     roll() {
@@ -119,6 +118,12 @@ class GameState {
         StorageHandler.saveGame(this);
         return true;
     }
+
+    startNewTurn() {
+        this.rollNum = 0;
+        this.turnNum++;
+        this.dice = Array.from({length: 5}, (_, i) => new Die(i)); //Make some new die
+    }
 }
 
 //4. Storage Handler: Stores and loads data to and from local storage.
@@ -217,6 +222,8 @@ class UIControl {
             this.gameState.dice.map((die) => die.value)
         );
         if (didScore) {
+            this.gameState.startNewTurn();
+            this.showMessage(`Turn ${this.gameState.turnNum}`);
             this.updateUI();
             StorageHandler.saveGame(this.gameState);
         } else {
@@ -254,70 +261,76 @@ class UIControl {
     }
 
     updateScoreForm() {
-        const diceValues = this.gameState.dice.map((die) => die.value);
+        if (this.gameState.rollNum != 0) {
+            this.scoreForm.find("input").prop("disabled", false);
+            const diceValues = this.gameState.dice.map((die) => die.value);
 
-        // Enable single number scores (ones through sixes)
-        for (let i = 1; i <= 6; i++) {
-            const hasNumber = diceValues.some((die) => die === i);
-            this.scoreForm.find(`input[value="${i}"]`).prop("disabled", !hasNumber);
-        }
+            // Enable single number scores (ones through sixes)
+            for (let i = 1; i <= 6; i++) {
+                const hasNumber = diceValues.some((die) => die === i);
+                hasNumber && this.scoreForm.find(`input[value="${i}"]`).addClass("highlighted");
+            }
 
-        // Count occurrences of each die value
-        const counts = new Array(6).fill(0); // array of 6 0s
-        for (let die of diceValues) {
-            counts[die - 1]++; // Increment the count for this die value
-        }
+            // Count occurrences of each die value
+            const counts = new Array(6).fill(0); // array of 6 0s
+            for (let die of diceValues) {
+                counts[die - 1]++; // Increment the count for this die value
+            }
 
-        // Multiple of a kind checks
-        this.scoreForm.find("#threeKind").prop("disabled", !counts.some((value) => value >= 3));
-        this.scoreForm.find("#fourKind").prop("disabled", !counts.some((value) => value >= 4));
+            // Multiple of a kind checks
+            !counts.some((value) => value >= 3) && this.scoreForm.find("#threeKind").addClass("highlighted");
+            !counts.some((value) => value >= 4) && this.scoreForm.find("#fourKind").addClass("highlighted");
 
-        // Full house check) = !counts.some((value) => value >= 4);
+            // Full house check) = !counts.some((value) => value >= 4);
 
-        // Full house check
-        this.scoreForm.find("#fullHouse").prop("disabled", !(counts.includes(3) && counts.includes(2)));
+            // Full house check
+            !(counts.includes(3) && counts.includes(2)) && this.scoreForm.find("#fullHouse").addClass("highlighted");
 
-        // Check for straights
-        const smalls = [
-            [1, 2, 3, 4],
-            [2, 3, 4, 5],
-            [3, 4, 5, 6],
-        ];
+            // Check for straights
+            const smalls = [
+                [1, 2, 3, 4],
+                [2, 3, 4, 5],
+                [3, 4, 5, 6],
+            ];
 
-        const larges = [
-            [1, 2, 3, 4, 5],
-            [2, 3, 4, 5, 6],
-        ];
+            const larges = [
+                [1, 2, 3, 4, 5],
+                [2, 3, 4, 5, 6],
+            ];
 
-        // Check if any small straight pattern exists in the dice
-        for (let smallArray of smalls) {
-            /*
+            // Check if any small straight pattern exists in the dice
+            for (let smallArray of smalls) {
+                /*
      I could maybe simplify this farther, but I struggled a bit with this part,
      so I am fine leaving it as is.
      */
-            if (smallArray.every((value) => diceValues.includes(value))) {
-                this.scoreForm.find("#small").prop("disabled", false);
-                break; //We found a straight, stop iterating.
+                if (smallArray.every((value) => diceValues.includes(value))) {
+                    this.scoreForm.find("#small").addClass("highlighted");
+                    break; //We found a straight, stop iterating.
+                }
             }
-        }
 
-        // Check if any large straight pattern exists in the dice
-        for (let largeArray of larges) {
-            if (largeArray.every((value) => diceValues.includes(value))) {
-                this.scoreForm.find("#large").prop("disabled", false);
-                break;
+            // Check if any large straight pattern exists in the dice
+            for (let largeArray of larges) {
+                if (largeArray.every((value) => diceValues.includes(value))) {
+                    this.scoreForm.find("#large").addClass("highlighted");
+                    break;
+                }
             }
-        }
 
-        //If all 5 values match, enable the Crazee!
-        this.scoreForm.find("#crazee").prop("disabled", !diceValues.every((value) => value === diceValues[0])); //Enabled if every value matches the first.
+            //If all 5 values match, enable the Crazee!
+            !diceValues.every((value) => value === diceValues[0]) &&
+                this.scoreForm.find("#crazee").addClass("highlighted"); //Enabled if every value matches the first.
 
-        //Always enable the chance
-        this.scoreForm.find("#chance").prop("disabled", false);
+            //Always enable the chance
+            this.scoreForm.find("#chance").addClass("highlighted");
 
-        //Finally, disable any score options previously used
-        for (const type of this.gameState.score.usedScoreTypes) {
-            this.scoreForm.find(`input[value="${type}"]`).prop("disabled, true"); //Disable the input with associated type.
+            //Finally, disable any score options previously used
+            for (const type of this.gameState.score.usedScoreTypes) {
+                this.scoreForm.find(`input[value="${type}"]`).addClass("highlighted"); //Disable the input with associated type.
+            }
+        } else {
+            this.scoreForm.find("input").prop("disabled", true); //Disable options before first roll
         }
     }
     updateScoreDisplay() {
@@ -345,6 +358,7 @@ class CrazeeGame {
         //Load Saved game
         StorageHandler.loadGame(this.gameState);
         this.ui.updateUI();
+        this.ui.showMessage(`Turn ${this.gameState.turnNum}`);
     }
 }
 
