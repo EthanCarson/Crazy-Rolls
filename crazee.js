@@ -195,7 +195,7 @@ class UIControl {
         $(this.scoreForm).submit((e) => this.handleScoreSubmit(e));
 
         //Initialize Score UI
-        this.scoreSpan.find("input").prop("disabled", true);
+        this.scoreForm.find("input").prop("disabled", true);
         //Update UI on start
         this.updateUI();
     }
@@ -204,6 +204,8 @@ class UIControl {
         const didRoll = this.gameState.rollDice();
         if (didRoll) {
             this.updateUI();
+            this.updateScoreForm();
+            StorageHandler.saveGame(this.gameState);
         } else {
             this.showMessage("You can not roll any more this turn!");
         }
@@ -212,8 +214,7 @@ class UIControl {
         e.preventDefault();
         const didScore = this.gameState.score.submitScore(
             this.scoreForm.find(`input:checked`).val(),
-            this.gameState.dice.map((die) => die.value),
-            this.gameState
+            this.gameState.dice.map((die) => die.value)
         );
         if (didScore) {
             this.updateUI();
@@ -234,7 +235,7 @@ class UIControl {
 
     updateUI() {
         this.updateDiceDisplay();
-        this.updateScoreOptions();
+        this.updateScoreForm();
         this.updateScoreDisplay();
     }
 
@@ -252,6 +253,73 @@ class UIControl {
         });
     }
 
+    updateScoreForm() {
+        const diceValues = this.gameState.dice.map((die) => die.value);
+
+        // Enable single number scores (ones through sixes)
+        for (let i = 1; i <= 6; i++) {
+            const hasNumber = diceValues.some((die) => die === i);
+            this.scoreForm.find(`input[value="${i}"]`).prop("disabled", !hasNumber);
+        }
+
+        // Count occurrences of each die value
+        const counts = new Array(6).fill(0); // array of 6 0s
+        for (let die of diceValues) {
+            counts[die - 1]++; // Increment the count for this die value
+        }
+
+        // Multiple of a kind checks
+        this.scoreForm.find("#threeKind").prop("disabled", !counts.some((value) => value >= 3));
+        this.scoreForm.find("#fourKind").prop("disabled", !counts.some((value) => value >= 4));
+
+        // Full house check) = !counts.some((value) => value >= 4);
+
+        // Full house check
+        this.scoreForm.find("#fullHouse").prop("disabled", !(counts.includes(3) && counts.includes(2)));
+
+        // Check for straights
+        const smalls = [
+            [1, 2, 3, 4],
+            [2, 3, 4, 5],
+            [3, 4, 5, 6],
+        ];
+
+        const larges = [
+            [1, 2, 3, 4, 5],
+            [2, 3, 4, 5, 6],
+        ];
+
+        // Check if any small straight pattern exists in the dice
+        for (let smallArray of smalls) {
+            /*
+     I could maybe simplify this farther, but I struggled a bit with this part,
+     so I am fine leaving it as is.
+     */
+            if (smallArray.every((value) => diceValues.includes(value))) {
+                this.scoreForm.find("#small").prop("disabled", false);
+                break; //We found a straight, stop iterating.
+            }
+        }
+
+        // Check if any large straight pattern exists in the dice
+        for (let largeArray of larges) {
+            if (largeArray.every((value) => diceValues.includes(value))) {
+                this.scoreForm.find("#large").prop("disabled", false);
+                break;
+            }
+        }
+
+        //If all 5 values match, enable the Crazee!
+        this.scoreForm.find("#crazee").prop("disabled", !diceValues.every((value) => value === diceValues[0])); //Enabled if every value matches the first.
+
+        //Always enable the chance
+        this.scoreForm.find("#chance").prop("disabled", false);
+
+        //Finally, disable any score options previously used
+        for (const type of this.gameState.score.usedScoreTypes) {
+            this.scoreForm.find(`input[value="${type}"]`).prop("disabled, true"); //Disable the input with associated type.
+        }
+    }
     updateScoreDisplay() {
         this.scoreSpan.text(this.gameState.score.currentScore);
     }
@@ -263,7 +331,7 @@ class UIControl {
 
     showMessage(message) {
         this.logDiv.html("");
-        this.logDiv.append(`<p>${message}</p>}`);
+        this.logDiv.append(`<p>${message}</p>`);
     }
 }
 
