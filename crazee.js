@@ -1,34 +1,36 @@
 "use strict";
 
 //Core objects for the game.
-
+//All of these functions were designed by me. I asked a few AIs for help organizing those functions into these functions. Essentially, I did the coding and AI helped with labeling.
 //1. The die. Keeps data for everything you need to know about a die and how to use it.
 class Die {
     constructor(id) {
-        this.id = id;
+        this.id = id; //Convenient for the DOM.
         this.value = "";
         this.isReserved = false;
     }
 
+    //Make A Die Roll
     roll() {
         this.value = Math.floor(Math.random() * 6 + 1);
     }
 
+    //Change the Reserve
     toggleReserved() {
         this.isReserved = !this.isReserved;
     }
 }
 
 //2. Score. This handles all logic specific to the score data.
-
 class Score {
     constructor() {
         this.currentScore = 0;
-        this.usedScoreTypes = [];
-        this.scoreValues = {};
+        this.usedScoreTypes = []; //For DOM manipulation
+        //this.scoreValues = {}; //If I wanted to store each value, but I don't think it is necessary
     }
 
-    calculateForType(scoreType, diceValues) {
+    //Calculate the score value based on die and checked input.
+    calculateScore(scoreType, diceValues) {
         let total = 0; // Initialize total outside the switch
         switch (scoreType) {
             case "1":
@@ -76,17 +78,18 @@ class Score {
         return total;
     }
 
+    //Submit score once everything is set.
     submitScore(score, scoreType) {
         this.currentScore += score;
         this.usedScoreTypes.push(scoreType);
     }
 
-    // getAvalibleScoreTypes() {
+    // getAvalibleScoreTypes() { I never found a use for this.
     //     //Even more logic
     // }
 }
-//3. Game state Manager. This handles all internal logic needed for the game to run.
 
+//3. Game state Manager. This handles all internal logic needed for the game to run.
 class GameState {
     constructor() {
         this.dice = Array.from({length: 5}, (_, i) => new Die(i)); //Pull just the index from it, not the value.
@@ -95,6 +98,8 @@ class GameState {
         this.rollNum = 0;
     }
 
+    //Control the Dice of the game
+
     getActiveDice() {
         return this.dice.filter((die) => !die.isReserved);
     }
@@ -102,7 +107,7 @@ class GameState {
     getReservedDice() {
         return this.dice.filter((die) => die.isReserved);
     }
-
+    //Roll all the dice at once.
     rollDice() {
         if (this.rollNum >= 3) {
             return false;
@@ -117,28 +122,22 @@ class GameState {
         return true;
     }
 
+    //Game controls
     startNewTurn() {
         this.turnNum++;
         this.rollNum = 0;
         this.dice = Array.from({length: 5}, (_, i) => new Die(i)); //Make some new die
         if (this.turnNum >= 14) {
-            window.alert(`The game has ended!`);
-            window.alert(`Final Score: ${this.score.currentScore}`);
-            restartGame();
-            return;
+            return true;
         }
-    }
-    restartGame() {
-        this.turnNum = 1;
-        this.score.usedScoreTypes = [];
-        this.score.currentScore = 0;
-        StorageHandler.clearStorage();
+        return false;
     }
 }
 
 //4. Storage Handler: Stores and loads data to and from local storage.
 //Actually making this an object literal seeing as we only need the object itself and not a specific instance per game or anything like that.
 const StorageHandler = {
+    //Check if storage is viable
     isAvailable() {
         try {
             const testKey = "_test";
@@ -189,6 +188,7 @@ const StorageHandler = {
 
         return true;
     },
+
     clearStorage() {
         localStorage.clear();
     },
@@ -196,8 +196,10 @@ const StorageHandler = {
 
 //5. UIControl. This object holds and updates all DOM elements.
 class UIControl {
-    constructor(gameState) {
+    constructor(gameState, crazeeGame) {
+        // Accept crazeeGame instance
         this.gameState = gameState;
+        this.crazeeGame = crazeeGame; // Store it
 
         //Store DOM elements
         this.diceDiv = $("#dice");
@@ -209,7 +211,7 @@ class UIControl {
 
         //Initialize Event Listeners
         $(this.rollButton).click(() => this.handleRollClick());
-        $(this.scoreForm).change(() => this.updateSubmitButton());
+        $(this.scoreForm).change(() => this.handleSubmitButton());
         $(this.scoreForm).submit((e) => this.handleScoreSubmit(e));
 
         //Initialize Score UI
@@ -218,9 +220,11 @@ class UIControl {
         this.updateUI();
     }
 
+    //DOM Events
     handleRollClick() {
         const didRoll = this.gameState.rollDice();
         if (didRoll) {
+            this.scoreForm.find("input").prop("disabled", false); //Enable Score
             this.updateUI();
             this.updateScoreForm();
             StorageHandler.saveGame(this.gameState);
@@ -228,6 +232,12 @@ class UIControl {
             this.showMessage("You can not roll any more this turn!");
         }
     }
+
+    handleSubmitButton() {
+        const submitButton = this.scoreForm.find('input[type="submit"]');
+        this.scoreForm.find("input:checked") && submitButton.prop("disabled", false);
+    }
+
     handleScoreSubmit(e) {
         e.preventDefault();
         const checkedScore = this.scoreForm.find("input:checked");
@@ -235,55 +245,30 @@ class UIControl {
         if (!checkedScore.hasClass("highlighted")) {
             calculatedScore = 0;
         } else {
-            calculatedScore = this.gameState.score.calculateForType(
+            calculatedScore = this.gameState.score.calculateScore(
                 checkedScore.val(),
                 this.gameState.dice.map((die) => die.value)
             );
         }
         if (calculatedScore != undefined) {
             this.gameState.score.submitScore(calculatedScore, checkedScore.val());
-            this.scoreForm.find("input").prop("checked", false).removeClass("highlighted").prop("disabled", true);
-            this.gameState.startNewTurn();
-            this.showMessage(`Turn ${this.gameState.turnNum}`);
-            this.updateUI();
-            StorageHandler.saveGame(this.gameState);
+            this.scoreForm.find("input").prop("checked", false).removeClass("highlighted").prop("disabled", true); // Reset form for next turn scoring
+            this.crazeeGame.processTurnEnd(); // Delegate to CrazeeGame to handle end of turn logic
         } else {
             console.error("A problem occured in recording the score");
         }
     }
 
-    createDieElement(die) {
-        const dieElement = $(`<div data-die-id="${die.id}">${die.value}</div>`);
-        dieElement.click(() => {
-            die.toggleReserved();
-            this.updateUI();
-        });
-        return dieElement;
-    }
+    //Update DOM elements
 
-    updateAllUI() {
-        this.updateDiceDisplay();
+    updateUI() {
         this.updateScoreForm();
+        this.updateDiceDisplay();
         this.updateScoreDisplay();
-    }
-
-    updateDiceDisplay() {
-        // Update active dice
-        $(this.diceDiv).html("");
-        this.gameState.getActiveDice().forEach((die) => {
-            this.diceDiv.append(this.createDieElement(die));
-        });
-
-        // Update reserved dice
-        $(this.reserveDiv).html("");
-        this.gameState.getReservedDice().forEach((die) => {
-            this.reserveDiv.append(this.createDieElement(die));
-        });
     }
 
     updateScoreForm() {
         this.scoreForm.find("input").removeClass("highlighted");
-        this.scoreForm.find("input").prop("disabled", false);
         const diceValues = this.gameState.dice.map((die) => die.value);
 
         // Enable single number scores (ones through sixes)
@@ -350,13 +335,34 @@ class UIControl {
             this.scoreForm.find(`input[value="${type}"]`).prop("disabled", true); //Disable the input with associated type.
         }
     }
+
+    updateDiceDisplay() {
+        // Update active dice
+        $(this.diceDiv).html("");
+        this.gameState.getActiveDice().forEach((die) => {
+            this.diceDiv.append(this.createDieElement(die));
+        });
+
+        // Update reserved dice
+        $(this.reserveDiv).html("");
+        this.gameState.getReservedDice().forEach((die) => {
+            this.reserveDiv.append(this.createDieElement(die));
+        });
+    }
+
     updateScoreDisplay() {
         this.scoreSpan.text(this.gameState.score.currentScore);
     }
 
-    updateSubmitButton() {
-        const submitButton = this.scoreForm.find('input[type="submit"]');
-        this.scoreForm.find("input:checked") && submitButton.prop("disabled", false);
+    //Add Elements and Text
+
+    createDieElement(die) {
+        const dieElement = $(`<div data-die-id="${die.id}">${die.value}</div>`);
+        dieElement.click(() => {
+            die.toggleReserved();
+            this.updateUI();
+        });
+        return dieElement;
     }
 
     showMessage(message) {
@@ -370,12 +376,39 @@ class UIControl {
 class CrazeeGame {
     constructor() {
         this.gameState = new GameState();
-        this.ui = new UIControl(this.gameState);
+        //This single line of code blew my friggin mind. I can pass this, the CrazeeGame object itself, to UIControl. This allows me to call a higher level function from UI control, but it's so cool how code can be self-referencial like this.
+        this.ui = new UIControl(this.gameState, this);
 
         //Load Saved game
         StorageHandler.loadGame(this.gameState);
         this.ui.updateUI();
         this.ui.showMessage(`Turn ${this.gameState.turnNum}`);
+    }
+
+    processTurnEnd() {
+        const isGameOver = this.gameState.startNewTurn(); // GameState increments turn and checks for game over
+
+        if (isGameOver) {
+            window.alert(`The game has ended!`);
+            window.alert(`Final Score: ${this.gameState.score.currentScore}`);
+            this.resetGame();
+        } else {
+            // Normal turn progression
+            this.ui.showMessage(`Turn ${this.gameState.turnNum}`);
+            this.ui.updateUI(); // Update UI for the new turn (dice, score form, etc.)
+            StorageHandler.saveGame(this.gameState); // Save state for the new turn
+        }
+    }
+
+    resetGame() {
+        StorageHandler.clearStorage(); // Make sure this is called correctly
+        this.gameState = new GameState();
+        // Re-initialize UIControl with the new gameState and this CrazeeGame instance.
+        // This is important so UIControl has the correct references after a reset.
+        this.ui = new UIControl(this.gameState, this);
+
+        this.ui.updateUI();
+        this.ui.showMessage(`Turn ${this.gameState.turnNum}`); // Should show "Turn 1"
     }
 }
 
