@@ -1,0 +1,3 @@
+#scoreForm input[type="radio"].highlighted + label {
+  background-color: yellow;
+}
