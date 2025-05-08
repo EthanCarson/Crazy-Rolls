@@ -1,3 +1,55 @@
+* {
+  box-sizing: border-box;
+}
+html {
+  max-width: 100%;
+}
+body {
+  min-width: 100%;
+  min-height: 100vh;
+  background-color: saddlebrown;
+  border: 0.8rem solid saddlebrown;
+  border-top: 0.5rem solid saddlebrown;
+  border-bottom: 0.5rem solid saddlebrown;
+}
+
+#Game-screen {
+  padding: 0.2rem;
+  border-radius: 1rem;
+}
+#toastLog {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  padding: 3rem;
+}
+@media screen and (max-width: 600px) {
+  #toastLog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+#log {
+  font-weight: bolder;
+}
+h1 {
+  font-weight: bold;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+div {
+  text-align: center;
+}
+#Dice-elements {
+  --bs-bg-opacity: 0.85;
+}
 #scoreForm input[type="radio"].highlighted + label {
   background-color: yellow;
 }

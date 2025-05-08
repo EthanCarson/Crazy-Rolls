@@ -206,6 +206,7 @@ class UIControl {
         this.reserveDiv = $("#reserve");
         this.scoreSpan = $("#score");
         this.logDiv = $("#log");
+        this.toast = $("#liveToast");
         this.scoreForm = $("#scoreForm");
         this.rollButton = $("button");
 
@@ -374,8 +375,12 @@ class UIControl {
     }
 
     showMessage(message) {
-        this.logDiv.html("");
-        this.logDiv.append(`<p>${message}</p>`);
+        this.logDiv.text(message);
+        const toastBootstrap = bootstrap.Toast.getOrCreateInstance(this.toast[0]);
+        /*
+        Explaining that line above: bootstrap wants a pure DOM element but jQuery passes a jQuery element. The [0] at the end denotes the first element of the query, which returns the proper DOM element.
+        */
+        toastBootstrap.show();
     }
 }
 
