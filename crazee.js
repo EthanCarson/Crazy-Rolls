@@ -269,6 +269,7 @@ class UIControl {
         this.updateScoreForm();
         this.updateDiceDisplay();
         this.updateScoreDisplay();
+        this.handleSubmitButton();
     }
 
     updateScoreForm() {
@@ -301,14 +302,14 @@ class UIControl {
 
             // Check for straights
             const smalls = [
-                [ 1, 2, 3, 4 ],
-                [ 2, 3, 4, 5 ],
-                [ 3, 4, 5, 6 ],
+                [1, 2, 3, 4],
+                [2, 3, 4, 5],
+                [3, 4, 5, 6],
             ];
 
             const larges = [
-                [ 1, 2, 3, 4, 5 ],
-                [ 2, 3, 4, 5, 6 ],
+                [1, 2, 3, 4, 5],
+                [2, 3, 4, 5, 6],
             ];
 
             // Check if any small straight pattern exists in the dice

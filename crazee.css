@@ -1,36 +1,34 @@
-* {
-  box-sizing: border-box;
-}
+/* Base styles */
 
 html {
   max-width: 100%;
-  max-height: 100%;
-  height: 100%; /* Ensure html takes full viewport height */
-  overflow: hidden; /* Prevent scrollbars */
 }
 
 body {
   min-width: 100%;
   min-height: 100%;
-  height: 100%; /* Ensure body takes full viewport height */
   background-color: saddlebrown;
   border: 0.8rem solid saddlebrown;
   border-top: 0.5rem solid saddlebrown;
   border-bottom: 0.5rem solid saddlebrown;
-  margin: 0; /* Remove default body margin */
-  overflow: hidden; /* Prevent scrollbars */
+  margin: 0;
 }
 
+/* Game screen */
 #Game-screen {
   padding: 0.2rem;
   border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Toast notifications */
 #toastLog {
   position: fixed;
   bottom: 0;
   right: 0;
   padding: 3rem;
+  z-index: 1000;
 }
 
 @media screen and (max-width: 600px) {
@@ -46,6 +44,7 @@ body {
   font-weight: bolder;
 }
 
+/* Typography */
 h1 {
   font-weight: bold;
 }
@@ -61,35 +60,80 @@ div {
   text-align: center;
 }
 
+/* Dice section */
 #Dice-elements {
   --bs-bg-opacity: 0.85;
   border: 0.6rem solid rgb(78, 36, 5);
   border-radius: 0.8rem;
   width: 60%;
+  margin: 1rem auto;
+  padding: 1rem;
+}
+
+/* Score form improved */
+#scorecard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 #scoreForm {
-  align-items: flex-start;
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: column;
-  column-count: 2;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
   max-height: 24rem;
   overflow: auto;
   width: 55%;
   background-color: #0a0a0a;
   color: white;
   font-size: 1.4rem;
-  margin-top: 0.6rem;
-  margin-left: auto;
-  margin-right: auto;
-  border-radius: 0.2rem;
-  padding: 0.4rem;
+  margin: 0.6rem auto;
+  border: 0.005rem solid black;
+  border-radius: 0.4rem;
+  padding: 0.8rem;
+}
+
+.input-group-text {
+  display: flex;
+  width: 100%;
+  border: 1px solid #000000;
+  border-radius: 0.25rem;
+}
+.input-group-text:has(input:disabled) {
+  background-color: #6d6d6d;
 }
 .form-check {
-  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.form-label {
+  margin-left: 0.5rem;
+  margin-bottom: 0;
+  flex: 1;
+}
+
+#scoreForm input[type="submit"] {
+  grid-column: span 2;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
 }
 
 #scoreForm input[type="radio"].highlighted + label {
-  background-color: rgb(145, 95, 4);
+  color: rgb(145, 21, 4);
+  font-weight: bolder;
+}
+
+/* Score display */
+#score {
+  font-weight: bold;
+  font-size: 1.5rem;
 }
