@@ -275,7 +275,7 @@ class UIControl {
         this.scoreForm.find("input").removeClass("highlighted");
         if (this.gameState.rollNum !== 0) {
             //Don't update this at new turn start.
-
+            this.scoreForm.find("input").prop("disabled", false);
             const diceValues = this.gameState.dice.map((die) => die.value);
 
             // Enable single number scores (ones through sixes)
@@ -301,14 +301,14 @@ class UIControl {
 
             // Check for straights
             const smalls = [
-                [1, 2, 3, 4],
-                [2, 3, 4, 5],
-                [3, 4, 5, 6],
+                [ 1, 2, 3, 4 ],
+                [ 2, 3, 4, 5 ],
+                [ 3, 4, 5, 6 ],
             ];
 
             const larges = [
-                [1, 2, 3, 4, 5],
-                [2, 3, 4, 5, 6],
+                [ 1, 2, 3, 4, 5 ],
+                [ 2, 3, 4, 5, 6 ],
             ];
 
             // Check if any small straight pattern exists in the dice
@@ -390,10 +390,10 @@ class CrazeeGame {
     constructor() {
         this.gameState = new GameState();
         //This single line of code blew my friggin mind. I can pass this, the CrazeeGame object itself, to UIControl. This allows me to call a higher level function from UI control, but it's so cool how code can be self-referencial like this.
-        this.ui = new UIControl(this.gameState, this);
-
         //Load Saved game
         StorageHandler.loadGame(this.gameState);
+
+        this.ui = new UIControl(this.gameState, this);
         this.ui.updateUI();
         this.ui.showMessage(`Turn ${this.gameState.turnNum}`);
     }

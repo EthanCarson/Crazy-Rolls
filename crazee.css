@@ -1,28 +1,38 @@
 * {
   box-sizing: border-box;
 }
+
 html {
   max-width: 100%;
+  max-height: 100%;
+  height: 100%; /* Ensure html takes full viewport height */
+  overflow: hidden; /* Prevent scrollbars */
 }
+
 body {
   min-width: 100%;
-  min-height: 100vh;
+  min-height: 100%;
+  height: 100%; /* Ensure body takes full viewport height */
   background-color: saddlebrown;
   border: 0.8rem solid saddlebrown;
   border-top: 0.5rem solid saddlebrown;
   border-bottom: 0.5rem solid saddlebrown;
+  margin: 0; /* Remove default body margin */
+  overflow: hidden; /* Prevent scrollbars */
 }
 
 #Game-screen {
   padding: 0.2rem;
   border-radius: 1rem;
 }
+
 #toastLog {
   position: fixed;
   bottom: 0;
   right: 0;
   padding: 3rem;
 }
+
 @media screen and (max-width: 600px) {
   #toastLog {
     position: fixed;
@@ -31,12 +41,15 @@ body {
     transform: translate(-50%, -50%);
   }
 }
+
 #log {
   font-weight: bolder;
 }
+
 h1 {
   font-weight: bold;
 }
+
 h1,
 h2,
 h3,
@@ -47,9 +60,36 @@ p,
 div {
   text-align: center;
 }
+
 #Dice-elements {
   --bs-bg-opacity: 0.85;
+  border: 0.6rem solid rgb(78, 36, 5);
+  border-radius: 0.8rem;
+  width: 60%;
 }
+
+#scoreForm {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  column-count: 2;
+  max-height: 24rem;
+  overflow: auto;
+  width: 55%;
+  background-color: #0a0a0a;
+  color: white;
+  font-size: 1.4rem;
+  margin-top: 0.6rem;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 0.2rem;
+  padding: 0.4rem;
+}
+.form-check {
+  flex: 0 0 auto;
+}
+
 #scoreForm input[type="radio"].highlighted + label {
-  background-color: yellow;
+  background-color: rgb(145, 95, 4);
 }
