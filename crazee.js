@@ -325,14 +325,14 @@ class UIControl {
 
             // Check for straights
             const smalls = [
-                [ 1, 2, 3, 4 ],
-                [ 2, 3, 4, 5 ],
-                [ 3, 4, 5, 6 ],
+                [1, 2, 3, 4],
+                [2, 3, 4, 5],
+                [3, 4, 5, 6],
             ];
 
             const larges = [
-                [ 1, 2, 3, 4, 5 ],
-                [ 2, 3, 4, 5, 6 ],
+                [1, 2, 3, 4, 5],
+                [2, 3, 4, 5, 6],
             ];
 
             // Check if any small straight pattern exists in the dice
@@ -390,7 +390,12 @@ class UIControl {
     //Add Elements and Text
 
     createDieElement(die) {
-        const dieElement = $(`<div data-die-id="${die.id}">${die.value}</div>`);
+        const dieElement = $(`
+                ${
+                    die.value === ""
+                        ? ""
+                        : `<img data-die-id="${die.id}" src="Dice/Dice-${die.value}.png" class="Die-image" alt="${die.value}">`
+                }`);
         dieElement.click(() => {
             die.toggleReserved();
             this.updateUI();
