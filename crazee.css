@@ -75,8 +75,21 @@ div {
   cursor: pointer;
   margin-left: 0.5rem;
   margin-right: 0.5rem;
+  transition: all rolling-transition 1s linear ease-in-out;
 }
-
+.is-rolling {
+  animation: rolling-transition 1s linear;
+}
+@keyframes rolling-transition {
+  0% {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+  100% {
+    margin-left: 0.1rem;
+    margin-right: 0.1rem;
+  }
+}
 /* Score form improved */
 #scorecard {
   display: flex;
