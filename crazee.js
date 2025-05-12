@@ -208,12 +208,20 @@ class UIControl {
         this.logDiv = $("#log");
         this.toast = $("#liveToast");
         this.scoreForm = $("#scoreForm");
-        this.rollButton = $("button");
+        this.rollButton = $("#roll");
+        this.newGameButton = $("#newGame");
+
+        //Weird one for newGameButton
+        this.newGameClicks = 0;
+        setInterval(() => {
+            this.resetClicks();
+        }, 6500); //Reset this interval every 5 seconds.
 
         //Initialize Event Listeners
         $(this.rollButton).click(() => this.handleRollClick());
         $(this.scoreForm).change(() => this.handleSubmitButton());
         $(this.scoreForm).submit((e) => this.handleScoreSubmit(e));
+        $(this.newGameButton).click(() => this.handleNewGame());
 
         //Initialize Score UI
         this.scoreForm.find("input").prop("disabled", true);
@@ -222,6 +230,21 @@ class UIControl {
     }
 
     //DOM Events
+    handleNewGame() {
+        this.newGameClicks++;
+        if (this.newGameClicks === 1) {
+            this.showMessage("Are you sure you want to start a new game? Click again to confirm.");
+        } else {
+            this.crazeeGame.resetGame();
+            this.newGameClicks = 0;
+        }
+    }
+    resetClicks() {
+        if (this.newGameClicks === 1) {
+            this.newGameClicks = 0;
+        }
+    }
+
     handleRollClick() {
         const didRoll = this.gameState.rollDice();
         if (didRoll) {
@@ -302,14 +325,14 @@ class UIControl {
 
             // Check for straights
             const smalls = [
-                [1, 2, 3, 4],
-                [2, 3, 4, 5],
-                [3, 4, 5, 6],
+                [ 1, 2, 3, 4 ],
+                [ 2, 3, 4, 5 ],
+                [ 3, 4, 5, 6 ],
             ];
 
             const larges = [
-                [1, 2, 3, 4, 5],
-                [2, 3, 4, 5, 6],
+                [ 1, 2, 3, 4, 5 ],
+                [ 2, 3, 4, 5, 6 ],
             ];
 
             // Check if any small straight pattern exists in the dice
@@ -420,9 +443,7 @@ class CrazeeGame {
         // Re-initialize UIControl with the new gameState and this CrazeeGame instance.
         // This is important so UIControl has the correct references after a reset.
         this.ui = new UIControl(this.gameState, this);
-
-        this.ui.updateUI();
-        this.ui.showMessage(`Turn ${this.gameState.turnNum}`); // Should show "Turn 1"
+        window.location.reload(); //This provides the user visual feedback that the game has been reset.
     }
 }
 

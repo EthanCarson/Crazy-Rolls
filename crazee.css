@@ -137,3 +137,22 @@ div {
   font-weight: bold;
   font-size: 1.5rem;
 }
+
+#newGame {
+  width: 20%;
+  margin-left: auto;
+  margin-right: auto;
+  transition: width resetHover 1.5s ease-in-out;
+}
+#newGame:hover {
+  animation: resetHover 1.5s ease-in-out forwards;
+}
+@keyframes resetHover {
+  0% {
+    width: 20%;
+  }
+  100% {
+    width: 45%;
+    height: 110%;
+  }
+}
