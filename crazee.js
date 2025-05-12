@@ -12,7 +12,7 @@ class Die {
 
     //Make A Die Roll
     roll() {
-        this.value = Math.floor(Math.random() * 6 + 1);
+        return Math.floor(Math.random() * 6 + 1);
     }
 
     //Change the Reserve
@@ -115,7 +115,7 @@ class GameState {
 
         for (let die of this.rollNum === 0 ? this.dice : this.getActiveDice()) {
             //This is kinda akward, but the first time ONLY do I want to roll all dice.
-            die.roll(); //Make a roll for each of the 5 die.
+            die.value = die.roll(); //Make a roll for each of the 5 die.
         }
         this.rollNum++; //We roled the dice, so increment this to track that.
         StorageHandler.saveGame(this);
@@ -248,6 +248,7 @@ class UIControl {
     handleRollClick() {
         const didRoll = this.gameState.rollDice();
         if (didRoll) {
+            this.animateRoll();
             this.scoreForm.find("input").prop("disabled", false); //Enable Score
             this.updateUI();
             this.updateScoreForm();
@@ -410,6 +411,14 @@ class UIControl {
         Explaining that line above: bootstrap wants a pure DOM element but jQuery passes a jQuery element. The [0] at the end denotes the first element of the query, which returns the proper DOM element.
         */
         toastBootstrap.show();
+    }
+
+    //Bonus Animation
+    animateRoll() {
+        const activeDice = this.gameState.getActiveDice();
+        for (let die in activeDice) {
+            $(".Die-image[data-die-id=" + die + "]").addClass("is-rolling");
+        }
     }
 }
 
