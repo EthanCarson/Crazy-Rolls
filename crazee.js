@@ -248,12 +248,17 @@ class UIControl {
     handleRollClick() {
         const didRoll = this.gameState.rollDice();
         if (didRoll) {
-            this.animateRoll();
-            this.scoreForm.find("input").prop("disabled", false); //Enable Score
-            this.updateUI();
-            this.updateScoreForm();
-            this.handleSubmitButton();
-            StorageHandler.saveGame(this.gameState);
+            this.updateDiceDisplay(); //Show Dice to roll.
+            this.scoreForm.find("input").prop("disabled", true); // Disable Score form during animation
+            // Call animateRoll and pass a callback function to execute after animation
+            this.animateRoll(() => {
+                // This code will run after the animation completes
+                this.scoreForm.find("input").prop("disabled", false); //Enable Score
+                this.updateUI();
+                this.updateScoreForm();
+                this.handleSubmitButton();
+                StorageHandler.saveGame(this.gameState);
+            });
         } else {
             this.showMessage("You can not roll any more this turn!");
         }
@@ -414,11 +419,25 @@ class UIControl {
     }
 
     //Bonus Animation
-    animateRoll() {
+    animateRoll(callback) {
+        // Accept a callback function
         const activeDice = this.gameState.getActiveDice();
-        for (let die in activeDice) {
-            $(".Die-image[data-die-id=" + die + "]").addClass("is-rolling");
+        console.log(activeDice);
+        for (let die of activeDice) {
+            $(`.Die-image[data-die-id=${die.id}]`).addClass("is-rolling");
         }
+        const randomRoll = setInterval(() => {
+            for (let die of activeDice) {
+                $(`.Die-image[data-die-id=${die.id}]`).attr("src", `Dice/Dice-${die.roll()}.png`);
+            }
+        }, 50);
+        setTimeout(() => {
+            for (let die of activeDice) $(`.Die-image[data-die-id=${die.id}]`).removeClass("is-rolling");
+            clearInterval(randomRoll);
+            if (typeof callback === "function") {
+                callback(); // Execute the callback if it's a function
+            }
+        }, 800);
     }
 }
 
