@@ -90,6 +90,7 @@ div {
     margin-right: 0.1rem;
   }
 }
+
 /* Score form improved */
 #scorecard {
   display: flex;
@@ -152,12 +153,12 @@ div {
   font-weight: bolder;
 }
 
-/* Score display */
 #score {
   font-weight: bold;
   font-size: 1.5rem;
 }
 
+/*New Game Button*/
 #newGame {
   width: 20%;
   margin-left: auto;
@@ -173,6 +174,5 @@ div {
   }
   100% {
     width: 45%;
-    height: 110%;
   }
 }

@@ -67,14 +67,14 @@ class Score {
             case "large":
                 total = 40;
                 break;
-            case "crazee":
+            case "crazy":
                 total = 50;
                 break;
             case "default":
                 console.error("Invalid score type sent");
                 return; //STOP RUNNING CODE IF THIS HAPPENS
         }
-        //TODO: Maybe add Crazee bonuses as scores.
+        //TODO: Maybe add Crazy bonuses as scores.
         return total;
     }
 
@@ -196,10 +196,10 @@ const StorageHandler = {
 
 //5. UIControl. This object holds and updates all DOM elements.
 class UIControl {
-    constructor(gameState, crazeeGame) {
-        // Accept crazeeGame instance
+    constructor(gameState, crazyGame) {
+        // Accept crazyGame instance
         this.gameState = gameState;
-        this.crazeeGame = crazeeGame; // Store it
+        this.crazyGame = crazyGame; // Store it
 
         //Store DOM elements
         this.diceDiv = $("#dice");
@@ -235,7 +235,7 @@ class UIControl {
         if (this.newGameClicks === 1) {
             this.showMessage("Are you sure you want to start a new game? Click again to confirm.");
         } else {
-            this.crazeeGame.resetGame();
+            this.crazyGame.resetGame();
             this.newGameClicks = 0;
         }
     }
@@ -286,7 +286,7 @@ class UIControl {
         if (calculatedScore != undefined) {
             this.gameState.score.submitScore(calculatedScore, checkedScore.val());
             this.scoreForm.find("input").prop("checked", false).removeClass("highlighted").prop("disabled", true); // Reset form for next turn scoring
-            this.crazeeGame.processTurnEnd(); // Delegate to CrazeeGame to handle end of turn logic
+            this.crazyGame.processTurnEnd(); // Delegate to CrazyGame to handle end of turn logic
         } else {
             console.error("A problem occured in recording the score");
         }
@@ -361,9 +361,9 @@ class UIControl {
                 }
             }
 
-            //If all 5 values match, enable the Crazee!
+            //If all 5 values match, enable the Crazy!
             diceValues.every((value) => value === diceValues[0]) &&
-                this.scoreForm.find("#crazee").addClass("highlighted"); //Enabled if every value matches the first.
+                this.scoreForm.find("#crazy").addClass("highlighted"); //Enabled if every value matches the first.
 
             //Always enable the chance
             this.scoreForm.find("#chance").addClass("highlighted");
@@ -422,7 +422,7 @@ class UIControl {
     animateRoll(callback) {
         // Accept a callback function
         const activeDice = this.gameState.getActiveDice();
-        console.log(activeDice);
+        // console.log(activeDice);
         for (let die of activeDice) {
             $(`.Die-image[data-die-id=${die.id}]`).addClass("is-rolling");
         }
@@ -441,12 +441,12 @@ class UIControl {
     }
 }
 
-//6.CrazeeGame. This object is our motherboard. It traces all these elements together and runs them appropiately.
+//6.CrazyGame. This object is our motherboard. It traces all these elements together and runs them appropiately.
 
-class CrazeeGame {
+class CrazyGame {
     constructor() {
         this.gameState = new GameState();
-        //This single line of code blew my friggin mind. I can pass this, the CrazeeGame object itself, to UIControl. This allows me to call a higher level function from UI control, but it's so cool how code can be self-referencial like this.
+        //This single line of code blew my friggin mind. I can pass this, the CrazyGame object itself, to UIControl. This allows me to call a higher level function from UI control, but it's so cool how code can be self-referencial like this.
         //Load Saved game
         StorageHandler.loadGame(this.gameState);
 
@@ -473,7 +473,7 @@ class CrazeeGame {
     resetGame() {
         StorageHandler.clearStorage(); // Make sure this is called correctly
         this.gameState = new GameState();
-        // Re-initialize UIControl with the new gameState and this CrazeeGame instance.
+        // Re-initialize UIControl with the new gameState and this CrazyGame instance.
         // This is important so UIControl has the correct references after a reset.
         this.ui = new UIControl(this.gameState, this);
         window.location.reload(); //This provides the user visual feedback that the game has been reset.
@@ -481,4 +481,4 @@ class CrazeeGame {
 }
 
 //Initialiaze
-const game = new CrazeeGame();
+const game = new CrazyGame();
