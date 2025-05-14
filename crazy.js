@@ -233,7 +233,7 @@ class UIControl {
     handleNewGame() {
         this.newGameClicks++;
         if (this.newGameClicks === 1) {
-            this.showMessage("Are you sure you want to start a new game? Click again to confirm.");
+            this.showMessage("Are you sure you want to start a new game? Press the button again to confirm.");
         } else {
             this.crazyGame.resetGame();
             this.newGameClicks = 0;
