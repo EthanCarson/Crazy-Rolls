@@ -31,15 +31,6 @@ body {
   z-index: 1000;
 }
 
-@media screen and (max-width: 600px) {
-  #toastLog {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-}
-
 #log {
   font-weight: bolder;
 }
@@ -175,4 +166,32 @@ div {
   100% {
     width: 45%;
   }
+}
+
+/*Small Devices Styles*/
+@media screen and (max-width: 600px) {
+  #toastLog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  #Dice-elements {
+    width: 80%;
+    margin: 2rem auto;
+    padding: 1rem;
+  }
+  .Die-image {
+    width: 4rem;
+    height: 4rem;
+    margin: 1rem;
+  }
+  #scoreForm {
+    width: 100%;
+    font-size: 1.4rem;
+    margin: 0.6rem auto;
+    padding: 0.8rem;
+  }
+
+  
 }
